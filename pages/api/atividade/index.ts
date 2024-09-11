@@ -47,7 +47,7 @@ import createHttpError from "http-errors";
 const getAtividades: NextApiHandler<any> = async (req, res) => {
   const db = await connectToDatabase();
   const collection = db.collection<TAtividade>("atividades");
-  const activities = await collection.find().toArray();
+  const activities = await collection.find({}, { sort: { _id: -1 } }).toArray();
   res.status(200).json(activities);
 };
 

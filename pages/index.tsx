@@ -8,12 +8,13 @@ import {
 import axios from "axios";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import EditActivityDialog from "@/components/modals/atividades/EditActivityDialog";
+import EditActivityDialog from "@/components/modals/atividades/CreateActivityDialog";
 import {
   getActivities,
   useActivities,
 } from "@/utils/methods/queries/activities";
 import { getErrorMessage } from "@/utils/errors";
+import ActivityCard from "@/components/cards/ActivityCard";
 
 export default function Home() {
   // Estado para armazenar os dados do formulário
@@ -32,13 +33,14 @@ export default function Home() {
   } = useActivities();
   const [errors, setErrors] = useState<string | null>(null); // Estado para armazenar erros de validação
   const [isOpen, setIsOpen] = useState(false);
-  console.log(error);
+
   return (
-    <div className="w-full h-full flex-col p-4">
-      <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
+    <div className="w-full h-full flex-col p-4 bg-slate-400">
+      <h1 className="text-3xl font-bold text-center text-blck mb-6">
         ATIVIDADES
       </h1>
-      <div className="mb-4">
+
+      <div className="flex items-center justify-end mb-4">
         <Button
           type="button"
           onClick={() => setIsOpen(true)}
@@ -51,7 +53,7 @@ export default function Home() {
       {/* Botão para abrir o diálogo de edição */}
       <button
         onClick={() => setIsOpen(true)}
-        className="bg-green-500 text-white p-2 rounded mt-4"
+        className="bg-green-500 text-white p-2 rounded mt-4 hover:bg-green-600 duration-300"
       >
         Editar Atividade
       </button>
@@ -64,22 +66,16 @@ export default function Home() {
           {isError ? <p>{getErrorMessage(error)}</p> : null}
           {isSuccess
             ? activities.map((activity) => (
-                <div key={activity._id}>{activity.titulo}</div>
+                <ActivityCard key={activity._id} activity={activity} />
               ))
             : null}
         </div>
-        {/* {activities.length > 0 ? (
-          activities.map((activity, index) => (
-            <div key={index} className="bg-gray-100 p-4 mb-2 rounded">
-              <p><strong>Descrição:</strong> {activity.descricao}</p>
-            </div>
-          ))
-        ) : (
-          <p>Nenhuma atividade criada ainda.</p>
-        )} */}
       </div>
       {isOpen ? (
-        <EditActivityDialog closeModal={() => setIsOpen(false)} />
+        <EditActivityDialog
+          closeModal={() => setIsOpen(false)}
+          onAddActivity={() => {}}
+        />
       ) : null}
     </div>
   );
