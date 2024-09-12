@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "../../ui/button";
-import { TAtividade } from "@/schemas/atividadesSchema";
+import { TAtividade, TAtividadeWithId } from "@/schemas/atividadesSchema";
 import TextInput from "../../inputs/TextInput";
 import TextareaInput from "../../inputs/TextareaInput";
 import DateInput from "../../inputs/DateInput";
@@ -9,19 +9,35 @@ import { formatDateForInput, formatDateInputChange } from "@/utils/formatting";
 import { VscChromeClose } from "react-icons/vsc";
 import MenuResponsaveis from "./utils/menuResponsaveis";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createActivity } from "@/utils/methods/mutations/activities";
+import { updateActivity } from "@/utils/methods/mutations/activities";
 import { getErrorMessage } from "@/utils/errors";
+import { useActivityById } from "@/utils/methods/queries/activities";
 
-type CreateActivityDialogProps = {
+type EditActivityDialogProps = {
+  activityId: string;
   closeModal: () => void;
-  onAddActivity: (activity: TAtividade) => void; //propriedade para adicionar uma nova
 };
-function CreateActivityDialog({
+
+function EditActivityDialog({
+  activityId,
   closeModal,
-  onAddActivity,
-}: CreateActivityDialogProps) {
+}: EditActivityDialogProps) {
   const queryClient = useQueryClient();
-  const [infoHolder, setInfoHolder] = useState<TAtividade>({
+  const {
+    data: activity,
+    isLoading,
+    isError,
+    isSuccess,
+    error,
+  } = useActivityById(activityId);
+  const handleSave = () => {
+    console.log("Atividade editada:", infoHolder);
+    closeModal;
+  };
+
+  // Inicializa o estado com os dados da atividade existente
+  const [infoHolder, setInfoHolder] = useState<TAtividadeWithId>({
+    _id: "id-holder",
     titulo: "",
     descricao: "",
     responsaveis: [],
@@ -32,12 +48,15 @@ function CreateActivityDialog({
       nome: "Victor",
     },
   });
+
+  // Funções para adicionar ou remover responsáveis
   function addResponsible(responsible: TAtividade["responsaveis"][number]) {
     setInfoHolder((prev) => ({
       ...prev,
       responsaveis: [...prev.responsaveis, responsible],
     }));
   }
+
   function removeResponsible(index: number) {
     setInfoHolder((prev) => ({
       ...prev,
@@ -45,21 +64,21 @@ function CreateActivityDialog({
     }));
   }
 
-  const { mutate, isPending, isError, isSuccess } = useMutation({
-    mutationKey: ["create-activity"],
-    mutationFn: createActivity,
+  // Mutação para atualizar a atividade existente
+  const { mutate, isPending } = useMutation({
+    mutationKey: ["update-activity", activityId],
+    mutationFn: updateActivity,
     onMutate: (variables) => {
       queryClient.cancelQueries({ queryKey: ["activities"] });
       const prevData = queryClient.getQueryData(["activities"]);
-      queryClient.setQueryData(["activities"], (prev: any) => [
-        ...prev,
-        variables,
-      ]);
+      queryClient.setQueryData(["activities"], (prev: TAtividadeWithId[]) =>
+        prev.map((act) =>
+          act._id === variables.id ? { ...act, ...variables.changes } : act
+        )
+      );
       return { prevData };
     },
     onSuccess(data, variables, context) {
-      // alert("Atividade criada com sucesso!!");
-      onAddActivity(infoHolder);
       closeModal();
     },
     onSettled(data, error, variables, context) {
@@ -74,14 +93,16 @@ function CreateActivityDialog({
       alert(msg);
     },
   });
-
+  useEffect(() => {
+    if (activity) setInfoHolder(activity);
+  }, [activity]);
   return (
     <Dialog.Root open onOpenChange={closeModal}>
       <Dialog.Overlay className="fixed inset-0 z-[100] bg-primary/70 backdrop-blur-sm" />
       <Dialog.Content className="fixed left-[50%] top-[50%] z-[100] h-[80%] w-[70%] translate-x-[-50%] translate-y-[-50%] rounded-md bg-background p-[10px] lg:h-[60%] lg:w-[40%]">
         <div className="flex h-full w-full flex-col">
           <div className="flex flex-col items-center justify-between border-b border-gray-200 px-2 pb-2 text-lg lg:flex-row">
-            <h3 className="text-sm font-bold lg:text-xl">NOVA ATIVIDADE</h3>
+            <h3 className="text-sm font-bold lg:text-xl">EDITAR ATIVIDADE</h3>
             <button
               onClick={() => closeModal()}
               type="button"
@@ -92,33 +113,31 @@ function CreateActivityDialog({
           </div>
           <div className="scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 flex h-full flex-col gap-y-2 overflow-y-auto overscroll-y-auto p-2 py-1">
             <p className="text-sm text-gray-500 font-medium">
-              Use esse espaço para adiconar as atividades a sua lista.
+              Edite os detalhes da atividade abaixo.
             </p>
             <TextInput
               handleChange={(value) =>
                 setInfoHolder((prev) => ({ ...prev, titulo: value }))
               }
               label="Titulo"
-              placeholder="Digite seu titulo aqui..."
+              placeholder="Digite o título..."
               value={infoHolder.titulo}
-              // width="100%"
             />
             <TextareaInput
               handleChange={(value) =>
                 setInfoHolder((prev) => ({ ...prev, descricao: value }))
               }
-              label="descrição"
-              placeholder="Digite sua descrição aqui..."
+              label="Descrição"
+              placeholder="Digite a descrição..."
               value={infoHolder.descricao}
             />
-
             <DateInput
-              label="DATA DE VENCIMENTO"
+              label="Data de Vencimento"
               value={formatDateForInput(infoHolder.dataVencimento)}
               handleChange={(value) =>
                 setInfoHolder((prev) => ({
                   ...prev,
-                  dataConclusao: formatDateInputChange(value),
+                  dataVencimento: formatDateInputChange(value),
                 }))
               }
               width="100%"
@@ -132,10 +151,10 @@ function CreateActivityDialog({
           <div className="mt-2 flex w-full items-center justify-end">
             <Button
               disabled={isPending}
-              onClick={() => mutate(infoHolder)}
+              onClick={() => mutate({ id: activityId, changes: infoHolder })}
               type="button"
             >
-              ADICIONAR ATIVIDADE
+              SALVAR ALTERAÇÕES
             </Button>
           </div>
         </div>
@@ -144,4 +163,4 @@ function CreateActivityDialog({
   );
 }
 
-export default CreateActivityDialog;
+export default EditActivityDialog;

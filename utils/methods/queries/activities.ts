@@ -19,4 +19,18 @@ export function useActivities() {
   });
 }
 
-// function getActivityById() {}
+async function getActivityById(id: string) {
+  try {
+    const response = await axios.get(`/api/atividade?id=${id}`);
+
+    return response.data as TAtividadeWithId;
+  } catch (error) {
+    throw error;
+  }
+}
+export function useActivityById(id: string) {
+  return useQuery({
+    queryKey: ["activity-by-id", id],
+    queryFn: async () => await getActivityById(id),
+  });
+}

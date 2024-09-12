@@ -14,12 +14,8 @@ import { getErrorMessage } from "@/utils/errors";
 
 type CreateActivityDialogProps = {
   closeModal: () => void;
-  onAddActivity: (activity: TAtividade) => void; //propriedade para adicionar uma nova
 };
-function CreateActivityDialog({
-  closeModal,
-  onAddActivity,
-}: CreateActivityDialogProps) {
+function CreateActivityDialog({ closeModal }: CreateActivityDialogProps) {
   const queryClient = useQueryClient();
   const [infoHolder, setInfoHolder] = useState<TAtividade>({
     titulo: "",
@@ -59,7 +55,6 @@ function CreateActivityDialog({
     },
     onSuccess(data, variables, context) {
       // alert("Atividade criada com sucesso!!");
-      onAddActivity(infoHolder);
       closeModal();
     },
     onSettled(data, error, variables, context) {

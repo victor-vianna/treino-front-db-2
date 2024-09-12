@@ -7,6 +7,7 @@ import connectToDatabase from "../../../lib/mongodb/connections";
 import { apiHandler } from "../../../utils/api";
 import { ObjectId } from "mongodb";
 import createHttpError from "http-errors";
+import { Console } from "console";
 
 // export default async function handler(
 //   req: NextApiRequest,
@@ -45,8 +46,21 @@ import createHttpError from "http-errors";
 // }
 
 const getAtividades: NextApiHandler<any> = async (req, res) => {
+  const { id } = req.query;
   const db = await connectToDatabase();
   const collection = db.collection<TAtividade>("atividades");
+
+  if (id) {
+    if (typeof id != "string" || !ObjectId.isValid(id))
+      throw new createHttpError.BadRequest("ID inválido.");
+
+    const activity = await collection.findOne({ _id: new ObjectId(id) });
+    if (!activity)
+      throw new createHttpError.NotFound("Atividade não encontrada.");
+
+    return res.status(200).json(activity);
+  }
+
   const activities = await collection.find({}, { sort: { _id: -1 } }).toArray();
   res.status(200).json(activities);
 };
@@ -65,7 +79,6 @@ const createAtividade: NextApiHandler<any> = async (req, res) => {
 };
 const updateAtividades: NextApiHandler<any> = async (req, res) => {
   const id = req.query.id;
-
   if (!id || typeof id !== "string" || !ObjectId.isValid(id))
     throw new createHttpError.BadRequest("ID inválido.");
 
@@ -82,6 +95,7 @@ const updateAtividades: NextApiHandler<any> = async (req, res) => {
       $set: parsedData,
     }
   );
+
   if (!updateResponse.acknowledged)
     throw new createHttpError.InternalServerError(
       "Oops, um erro desconhecido aconteceu ao atualizar atividade."
@@ -89,7 +103,10 @@ const updateAtividades: NextApiHandler<any> = async (req, res) => {
   if (updateResponse.matchedCount == 0)
     throw new createHttpError.NotFound("Atividade não encontrada.");
 
-  return { message: "Atividade atualizada com sucesso !" };
+  console.log("CHEGUEI ATÉ AQUI");
+  return res
+    .status(201)
+    .json({ message: "Atividade atualizada com sucesso !" });
 };
 export default apiHandler({
   GET: getAtividades,
