@@ -83,7 +83,7 @@ const updateAtividades: NextApiHandler<any> = async (req, res) => {
     throw new createHttpError.BadRequest("ID inválido.");
 
   const parsedData = GeneralAtividadesSchema.partial().parse(req.body);
-
+  console.log("PARSED", parsedData);
   const db = await connectToDatabase();
   const collection = db.collection<TAtividade>("atividades");
 
