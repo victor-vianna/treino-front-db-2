@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { TAtividadeWithId } from "@/schemas/atividadesSchema";
 
 type ActivityCardProps = {
@@ -6,8 +6,23 @@ type ActivityCardProps = {
   handleClick: (id: string) => void;
 };
 function ActivityCard({ activity, handleClick }: ActivityCardProps) {
+
+  const [isChecked, setIsChecked] = useState(false);
+
+  const handleCheckBoxChange = () => {
+    setIsChecked(!isChecked)
+  }
+
   return (
     <div className="p-4 bg-blue-100 shadow rounded-md flex flex-col gap-2 mb-2">
+      <div className="flex item-center gap-2">
+        <input type="checkbox"
+               checked = {isChecked}
+               onChange = {handleCheckBoxChange} 
+               className="form-checkbox" 
+        />
+
+      </div>
       <h3 className="text-lg font-semibold">{activity.titulo}</h3>
       <p>
         descrição:
